@@ -1,0 +1,6 @@
+@ATON_Internship_HostAddress = http://localhost:5058
+
+GET {{ATON_Internship_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
