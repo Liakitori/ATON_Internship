@@ -1,5 +1,6 @@
 ﻿using ATON_Internship.Interfaces;
 using ATON_Internship.Models;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ATON_Internship.Services
 {
@@ -19,12 +20,12 @@ namespace ATON_Internship.Services
         private string GetCurrentUserLogin()
         {
             var login = _httpContextAccessor.HttpContext?.
-                                                   Request.
-                                                   Headers["X-Curren-User"].
-                                                   FirstOrDefault();
+                                                   User?.
+                                                   FindFirst(JwtRegisteredClaimNames.Sub)?.
+                                                   Value;
             if (string.IsNullOrEmpty( login ))
             {
-                throw new UnauthorizedAccessException("Текущий пользователь не указан в заголовке X-Current-User.");
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
             }
             return login;
         }
