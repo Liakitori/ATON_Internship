@@ -1,6 +1,6 @@
 ﻿using ATON_Internship.Interfaces;
 using ATON_Internship.Models;
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace ATON_Internship.Services
 {
@@ -19,16 +19,129 @@ namespace ATON_Internship.Services
 
         private string GetCurrentUserLogin()
         {
-            var login = _httpContextAccessor.HttpContext?.
-                                                   User?.
-                                                   FindFirst(JwtRegisteredClaimNames.Sub)?.
-                                                   Value;
-            if (string.IsNullOrEmpty( login ))
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"[UserService] Authorization header: {authHeader}");
+
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+            {
+                Console.WriteLine("[UserService] User is null");
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            // Логируем все claims
+            Console.WriteLine("[UserService] Available claims:");
+            foreach (var claim in user.Claims)
+            {
+                Console.WriteLine($"[UserService] Claim Type: {claim.Type}, Value: {claim.Value}");
+            }
+
+            // Извлекаем логин через ClaimTypes.NameIdentifier
+            var login = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            Console.WriteLine($"[UserService] Extracted login: {login}");
+
+            if (string.IsNullOrEmpty(login))
+            {
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            return login;
+        }
+        /*private string GetCurrentUserLogin()
+        {
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"[UserService] Authorization header: {authHeader}");
+
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+            {
+                Console.WriteLine("[UserService] User is null");
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            // Логируем все claims
+            Console.WriteLine("[UserService] Available claims:");
+            foreach (var claim in user.Claims)
+            {
+                Console.WriteLine($"[UserService] Claim Type: {claim.Type}, Value: {claim.Value}");
+            }
+
+            // Пробуем извлечь логин через разные типы claim
+            var login = user.FindFirst(ClaimTypes.Name)?.Value
+                ?? user.FindFirst("sub")?.Value;
+
+            Console.WriteLine($"[UserService] Extracted login: {login}");
+
+            if (string.IsNullOrEmpty(login))
+            {
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            return login;
+        }*/
+        /*private string GetCurrentUserLogin()
+        {
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"[UserService] Authorization header: {authHeader}");
+
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user == null)
+            {
+                Console.WriteLine("[UserService] User is null");
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            // Логируем все claims
+            Console.WriteLine("[UserService] Available claims:");
+            foreach (var claim in user.Claims)
+            {
+                Console.WriteLine($"[UserService] Claim Type: {claim.Type}, Value: {claim.Value}");
+            }
+
+            // Пробуем извлечь логин через разные типы claim
+            var login = user.FindFirst(ClaimTypes.Name)?.Value
+                ?? user.FindFirst()?.Value
+                ?? user.FindFirst("sub")?.Value;
+
+            Console.WriteLine($"[UserService] Extracted login: {login}");
+
+            if (string.IsNullOrEmpty(login))
+            {
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+
+            return login;
+        }*/
+        /*private string GetCurrentUserLogin()
+        {
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"[UserService] Authorization header: {authHeader}");
+
+            var user = _httpContextAccessor.HttpContext?.User;
+            Console.WriteLine($"[UserService] User: {(user != null ? "exists" : "null")}");
+
+            var login = user?.FindFirst(Microsoft.IdentityModel.Tokens.JwtRegisteredClaimNames.Sub)?.Value;
+            Console.WriteLine($"[UserService] Extracted login: {login}");
+
+            if (string.IsNullOrEmpty(login))
             {
                 throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
             }
             return login;
-        }
+        }*/
+        /*private string GetCurrentUserLogin()
+        {
+            var login = _httpContextAccessor.HttpContext?.
+                                                   User?.
+                                                   FindFirst(JwtRegisteredClaimNames.Sub)?.
+                                                   Value;
+            if (string.IsNullOrEmpty(login))
+            {
+                throw new UnauthorizedAccessException("Текущий пользователь не аутентифицирован.");
+            }
+            return login;
+        }*/
 
         public async Task<bool> IsAdminAsync(string login)
         {
@@ -192,11 +305,11 @@ namespace ATON_Internship.Services
 
         public async Task<User> GetUserByLoginAndPasswordAsync(string login, string password)
         {
-            var currentUserLogin = GetCurrentUserLogin();
+            /*var currentUserLogin = GetCurrentUserLogin();
             if (currentUserLogin != login)
             {
                 throw new UnauthorizedAccessException("Только сам пользователь может просмотреть эти данные");
-            }
+            }*/
 
             var user = await _usersRepository.GetUserByLoginAndPasswordAsync(login, password);
             if (user == null || !IsActive(user))
