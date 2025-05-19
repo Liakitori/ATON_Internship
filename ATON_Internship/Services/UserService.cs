@@ -160,34 +160,112 @@ namespace ATON_Internship.Services
             return await _usersRepository.UpdateUserAsync(user);
         }
 
-        public Task<List<User>> GetAllActiveUsersAsync()
+        public async Task<List<User>> GetAllActiveUsersAsync()
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if (!await IsAdminAsync(currentUserLogin))
+            {
+                throw new UnauthorizedAccessException("Только администратор может посмотреть список активных пользователей.");
+            }
+
+            var users = await _usersRepository.GetAllUsersAsync();
+            return users.Where(u => IsActive(u)).OrderBy(u => u.CreatedOn).ToList();
         }
 
-        public Task<User> GetUserByLoginAsync(string login)
+        public async Task<User> GetUserByLoginAsync(string login)
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if (!await IsAdminAsync(currentUserLogin))
+            {
+                throw new UnauthorizedAccessException("Только администратор может просматривать данные пользователя");
+            }
+
+            var user = await _usersRepository.GetUserByLoginAsync(login);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Пользователь не найден.");
+            }
+
+            return user;
         }
 
-        public Task<User> GetUserByLoginAndPasswordAsync(string login, string password)
+        public async Task<User> GetUserByLoginAndPasswordAsync(string login, string password)
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if (currentUserLogin != login)
+            {
+                throw new UnauthorizedAccessException("Только сам пользователь может просмотреть эти данные");
+            }
+
+            var user = await _usersRepository.GetUserByLoginAndPasswordAsync(login, password);
+            if (user == null || !IsActive(user))
+            {
+                throw new UnauthorizedAccessException("Неверный логин или пароль, либо пользователь неактивен.");
+            }
+
+            return user;
         }
 
-        public Task<List<User>> GetUsersOlderThenAsync(int age)
+        public async Task<List<User>> GetUsersOlderThenAsync(int age)
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if (!await IsAdminAsync(currentUserLogin))
+            {
+                throw new UnauthorizedAccessException("Только администратор может просмотреть данную информацию.");
+            }
+
+            var users = await _usersRepository.GetUsersOlderThanAsync(age);
+            if (users == null)
+            {
+                throw new KeyNotFoundException("Пользователи старше указанного возраста не найдены.");
+            }
+
+            return users;
         }
 
-        public Task<User> DeleteUserAsync(string login, bool isSoftDelete)
+        public async Task<User> DeleteUserAsync(string login, bool isSoftDelete)
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if (!await IsAdminAsync(currentUserLogin))
+            {
+                throw new UnauthorizedAccessException("Только администраторы могут удалять пользователей.");
+            }
+
+            var user = await _usersRepository.DeleteUserAsync(login, isSoftDelete);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Пользователь не найден.");
+            }
+
+            if (isSoftDelete)
+            {
+                user.RevokedBy = currentUserLogin;
+                await _usersRepository.UpdateUserAsync(user);
+            }
+
+            return user;
         }
 
-        public Task<User> RestoreUserAsync(string login)
+        public async Task<User> RestoreUserAsync(string login)
         {
-            throw new NotImplementedException();
+            var currentUserLogin = GetCurrentUserLogin();
+            if(!await IsAdminAsync(currentUserLogin))
+            {
+                throw new UnauthorizedAccessException("Только администраторы могут восстанавливать пользователей.");
+            }
+
+            var user = await _usersRepository.GetUserByLoginAsync(login);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Пользователь не найден.");
+            }
+
+            user.RevokedOn = null;
+            user.RevokedBy = null;
+            user.ModifiedOn = DateTime.Now; ;
+            user.ModifiedBy = currentUserLogin;
+
+            return await _usersRepository.UpdateUserAsync(user);
         }
     }
 }
