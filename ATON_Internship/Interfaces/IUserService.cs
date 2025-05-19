@@ -11,39 +11,36 @@ namespace ATON_Internship.Interfaces
             string name,
             int gender,
             DateTime birthday,
-            bool isAdmin
-            );
+            bool isAdmin);
 
         //Update-1
         Task<User> UpdateUserDetailsAsync(
             string login,
             string newName,
             int newGender,
-            DateTime newBirthday
-            );
+            DateTime newBirthday);
+
         Task<User> UpdateUserPasswordAsync(
             string login,
-            string newPassword
-            );
+            string newPassword);
+
         Task<User> UpdateUserLoginAsync(
             string login,
-            string newLogin
-            );
+            string newLogin);
 
         //Read
         Task<List<User>> GetAllActiveUsersAsync();
         Task<User> GetUserByLoginAsync(string login);
         Task<User> GetUserByLoginAndPasswordAsync(
             string login,
-            string password
-            );
+            string password);
+
         Task<List<User>> GetUsersOlderThenAsync(int age);
 
         //Delete
         Task<User> DeleteUserAsync(
             string login,
-            bool isSoftDelete
-            );
+            bool isSoftDelete);
 
         //Update-2
         Task<User> RestoreUserAsync(string login);

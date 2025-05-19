@@ -6,7 +6,6 @@ using ATON_Internship.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Cryptography.Xml;
 using System.Text;
 
 namespace ATON_Internship
@@ -26,10 +25,10 @@ namespace ATON_Internship
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
+
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ATON Internship API", Version = "v1" });
-
                 // Определяем схему безопасности для JWT
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -40,7 +39,7 @@ namespace ATON_Internship
                     Scheme = "bearer",
                     BearerFormat = "JWT"
                 });
-
+                c.EnableAnnotations();
                 // Добавляем требование безопасности
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
@@ -57,6 +56,7 @@ namespace ATON_Internship
                     }
                 });
             });
+
             builder.Services.AddScoped<IUsersRepository, UsersRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITokenService, TokenService>();

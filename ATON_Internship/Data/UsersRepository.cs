@@ -29,7 +29,7 @@ namespace ATON_Internship.Data
             };
         }
 
-        public async Task<User> AddUserAsync (User user)
+        public async Task<User> AddUserAsync(User user)
         {
             _users.Add(user);
             return user;

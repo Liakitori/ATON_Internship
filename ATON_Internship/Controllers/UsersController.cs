@@ -13,11 +13,17 @@ namespace ATON_Internship.Controllers
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(IUserService userService, ITokenService tokenService)
+        public UsersController(
+            IUserService userService,
+            ITokenService tokenService,
+            ILogger<UsersController> logger
+            )
         {
             _userService = userService;
             _tokenService = tokenService;
+            _logger = logger;
         }
 
         // Аутентификация и выдача токена
@@ -25,6 +31,11 @@ namespace ATON_Internship.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var user = await _userService.GetUserByLoginAndPasswordAsync(request.Login, request.Password);
@@ -36,9 +47,15 @@ namespace ATON_Internship.Controllers
                 var token = _tokenService.GenerateToken(user);
                 return Ok(new { Token = token });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при логине: {Message}", ex.Message);
+                return Unauthorized (ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при логине: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -47,6 +64,11 @@ namespace ATON_Internship.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var user = await _userService.CreateUserAsync(
@@ -66,9 +88,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при создании пользователя: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("Конфликт при создании пользователя: {Message}", ex.Message);
+                return Conflict(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при создании пользователя: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -77,6 +110,11 @@ namespace ATON_Internship.Controllers
         [HttpPut("{login}/details")]
         public async Task<IActionResult> UpdateUserDetails(string login, [FromBody] UpdateUserDetailsRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var user = await _userService.UpdateUserDetailsAsync(
@@ -94,9 +132,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при обновлении данных пользователя: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при обновлении данных пользователя: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -105,6 +154,11 @@ namespace ATON_Internship.Controllers
         [HttpPut("{login}/password")]
         public async Task<IActionResult> UpdateUserPassword(string login, [FromBody] string newPassword)
         {
+            if (string.IsNullOrEmpty(newPassword))
+            {
+                return BadRequest("Новый пароль не может быть пустым");
+            }
+
             try
             {
                 var user = await _userService.UpdateUserPasswordAsync(login, newPassword);
@@ -117,9 +171,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при обновлении пароля: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при обновлении пароля: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -128,6 +193,11 @@ namespace ATON_Internship.Controllers
         [HttpPut("{login}/login")]
         public async Task<IActionResult> UpdateUserLogin(string login, [FromBody] string newLogin)
         {
+            if (string.IsNullOrEmpty(newLogin))
+            {
+                return BadRequest("Новый логин не может быть пустым.");
+            }
+
             try
             {
                 var user = await _userService.UpdateUserLoginAsync(login, newLogin);
@@ -140,9 +210,25 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при обновлении логина: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("Конфликт при обновлении логина: {Message}", ex.Message);
+                return Conflict(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при обновлении логина: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -167,13 +253,13 @@ namespace ATON_Internship.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                Console.WriteLine($"[UsersController] Unauthorized: {ex.Message}");
+                _logger.LogWarning("Неавторизованный доступ при получении активных пользователей: {Message}", ex.Message);
                 return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UsersController] Error: {ex.Message}");
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при получении активных пользователей: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -193,9 +279,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при получении пользователя: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при получении пользователя: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -204,6 +301,11 @@ namespace ATON_Internship.Controllers
         [HttpGet("older-than")]
         public async Task<IActionResult> GetUsersOlderThan([FromQuery] int age)
         {
+            if (age < 0)
+            {
+                return BadRequest("Возраст не может быть отрицательным.");
+            }
+
             try
             {
                 var users = await _userService.GetUsersOlderThenAsync(age);
@@ -217,9 +319,15 @@ namespace ATON_Internship.Controllers
                 }).ToList();
                 return Ok(userDtos);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при получении пользователей старше возраста: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при получении пользователей старше возраста: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -240,9 +348,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при удалении пользователя: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при удалении пользователя: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
@@ -263,9 +382,20 @@ namespace ATON_Internship.Controllers
                     IsActive = user.RevokedOn == null
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Неавторизованный доступ при восстановлении пользователя: {Message}", ex.Message);
+                return Unauthorized(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning("Пользователь не найден: {Message}", ex.Message);
+                return NotFound(ex.Message);
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Ошибка при восстановлении пользователя: {Message}", ex.Message);
+                return StatusCode(500, "Внутренняя ошибка сервера.");
             }
         }
 
