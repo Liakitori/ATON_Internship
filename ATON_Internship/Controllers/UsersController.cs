@@ -154,7 +154,6 @@ namespace ATON_Internship.Controllers
             try
             {
                 var authHeader = Request.Headers["Authorization"].ToString();
-                Console.WriteLine($"[UsersController] Authorization header: {authHeader}");
                 var users = await _userService.GetAllActiveUsersAsync();
                 var userDtos = users.Select(u => new UserDto
                 {
@@ -177,28 +176,6 @@ namespace ATON_Internship.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        /*[Authorize]
-        [HttpGet("active")]
-        public async Task<IActionResult> GetAllActiveUsers()
-        {
-            try
-            {
-                var users = await _userService.GetAllActiveUsersAsync();
-                var userDtos = users.Select(u => new UserDto
-                {
-                    Login = u.Login,
-                    Name = u.Name,
-                    Gender = u.Gender,
-                    Birthday = u.Birthday,
-                    IsActive = u.RevokedOn == null
-                }).ToList();
-                return Ok(userDtos);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }*/
 
         // Получение пользователя по логину (Доступно админам)
         [Authorize]
