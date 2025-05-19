@@ -37,7 +37,7 @@ namespace ATON_Internship.Interfaces
             string login,
             string password
             );
-        Task<User> GetUserOlderThenAsync(int age);
+        Task<List<User>> GetUsersOlderThenAsync(int age);
 
         //Delete
         Task<User> DeleteUserAsync(
