@@ -195,12 +195,6 @@ namespace ATON_Internship.Services
 
         public async Task<User> GetUserByLoginAndPasswordAsync(string login, string password)
         {
-            /*var currentUserLogin = GetCurrentUserLogin();
-            if (currentUserLogin != login)
-            {
-                throw new UnauthorizedAccessException("Только сам пользователь может просмотреть эти данные");
-            }*/
-
             var user = await _usersRepository.GetUserByLoginAndPasswordAsync(login, password);
             if (user == null || !IsActive(user))
             {

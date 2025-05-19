@@ -17,7 +17,7 @@ namespace ATON_Internship.Models
         public required string Password { get; set; }
 
         [Required]
-        [RegularExpression(@"^[a-zA-Zа-яА-ЯёЁ]+$", ErrorMessage = "Имя может содержать только латинские буквы и цифры.")]
+        [RegularExpression(@"^[a-zA-Zа-яА-ЯёЁ]+$", ErrorMessage = "Имя может содержать только буквы русского/латинского алфавита.")]
         public required string Name { get; set; }
 
         [Required]
