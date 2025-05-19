@@ -3,6 +3,9 @@ using ATON_Internship.Data;
 using ATON_Internship.Interfaces;
 using ATON_Internship.Models;
 using ATON_Internship.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace ATON_Internship
 {
@@ -12,11 +15,12 @@ namespace ATON_Internship
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //Читаем настройки JWT
+            //Чтение настроек JWT
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            // Add services to the container.
+
+            //Добавление сервисов
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
@@ -26,6 +30,24 @@ namespace ATON_Internship
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddHttpContextAccessor();
 
+            //Настройка аутентификации JWT
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                };
+            });
 
             var app = builder.Build();
 
@@ -38,10 +60,8 @@ namespace ATON_Internship
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();
