@@ -1,5 +1,8 @@
 
+using ATON_Internship.Data;
+using ATON_Internship.Interfaces;
 using ATON_Internship.Models;
+using ATON_Internship.Services;
 
 namespace ATON_Internship
 {
@@ -14,13 +17,15 @@ namespace ATON_Internship
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             // Add services to the container.
-
-
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            
+            builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddHttpContextAccessor();
+
 
             var app = builder.Build();
 
