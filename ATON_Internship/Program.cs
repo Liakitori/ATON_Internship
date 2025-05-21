@@ -57,7 +57,7 @@ namespace ATON_Internship
                 });
             });
 
-            builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+            builder.Services.AddSingleton<IUsersRepository, UsersRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddHttpContextAccessor();

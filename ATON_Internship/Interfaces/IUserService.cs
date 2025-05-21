@@ -44,5 +44,7 @@ namespace ATON_Internship.Interfaces
 
         //Update-2
         Task<User> RestoreUserAsync(string login);
+
+        Task<List<string>> GetAllLoginsAsync();
     }
 }

@@ -1,11 +1,14 @@
 ﻿using ATON_Internship.Interfaces;
 using ATON_Internship.Models;
+using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace ATON_Internship.Data
 {
     public class UsersRepository : IUsersRepository
     {
         private readonly List<User> _users;
+
         public UsersRepository()
         {
             _users = new List<User>
@@ -16,7 +19,7 @@ namespace ATON_Internship.Data
                     Login = "Admin",
                     Password = "Admin123",
                     Name = "Administrator",
-                    Gender = 2, // Неизвестно
+                    Gender = 2,
                     Birthday = null,
                     Admin = true,
                     CreatedOn = DateTime.Now,
@@ -32,73 +35,58 @@ namespace ATON_Internship.Data
         public async Task<User> AddUserAsync(User user)
         {
             _users.Add(user);
-            return user;
+            return await Task.FromResult(user);
         }
 
         public async Task<User> UpdateUserAsync(User user)
         {
-            var existingUser = _users.FirstOrDefault(u => u.Guid == user.Guid);
-            if (existingUser == null)
-            {
-                throw new KeyNotFoundException("Пользователь не найден.");
-            }
-
-            existingUser.Login = user.Login;
-            existingUser.Password = user.Password;
-            existingUser.Name = user.Name;
-            existingUser.Gender = user.Gender;
-            existingUser.Birthday = user.Birthday;
-            existingUser.Admin = user.Admin;
-            existingUser.CreatedOn = user.CreatedOn;
-            existingUser.CreatedBy = user.CreatedBy;
-            existingUser.ModifiedOn = user.ModifiedOn;
-            existingUser.ModifiedBy = user.ModifiedBy;
-            existingUser.RevokedOn = user.RevokedOn;
-            existingUser.RevokedBy = user.RevokedBy;
-
-            return existingUser;
+            var index = _users.FindIndex(u => u.Guid == user.Guid);
+            _users[index] = user;
+            return await Task.FromResult(user);
         }
 
-        public async Task<User> DeleteUserAsync(string login, bool isSoftDelete)
+        public async Task<User> DeleteUserAsync(string login, bool isSoftDelete, string revokedBy)
         {
-            var user = _users.FirstOrDefault(u => u.Login == login);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("Пользователь не найден.");
-            }
-
+            var user = _users.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
             if (isSoftDelete)
             {
                 user.RevokedOn = DateTime.Now;
-                user.RevokedBy = "Admin";
-                return user;
+                user.RevokedBy = revokedBy;
             }
             else
             {
                 _users.Remove(user);
-                return user;
             }
+            return await Task.FromResult(user);
         }
 
         public async Task<List<User>> GetAllUsersAsync()
         {
-            return _users.ToList();
+            return await Task.FromResult(_users.ToList());
         }
 
         public async Task<User> GetUserByLoginAsync(string login)
         {
-            return _users.FirstOrDefault(u => u.Login == login);
+            return await Task.FromResult(_users.FirstOrDefault(u => u.Login == login));
         }
 
         public async Task<User> GetUserByLoginAndPasswordAsync(string login, string password)
         {
-            return _users.FirstOrDefault(u => u.Login == login && u.Password == password);
+            return await Task.FromResult(_users.FirstOrDefault(u => u.Login == login && u.Password == password));
         }
 
         public async Task<List<User>> GetUsersOlderThanAsync(int age)
         {
             var thresholdDate = DateTime.Now.AddYears(-age);
-            return _users.Where(u => u.Birthday.HasValue && u.Birthday.Value <= thresholdDate).ToList();
+            var users = _users.Where(u => u.Birthday.HasValue && u.Birthday.Value <= thresholdDate).ToList();
+            return await Task.FromResult(users);
         }
+
+        public async Task<List<string>> GetAllLoginsAsync()
+        {
+            var logins = _users.Select(u => u.Login).ToList();
+            return await Task.FromResult(logins);
+        }
+
     }
 }

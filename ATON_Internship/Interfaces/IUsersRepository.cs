@@ -6,10 +6,11 @@ namespace ATON_Internship.Interfaces
     {
         Task<User> AddUserAsync(User user);
         Task<User> UpdateUserAsync(User user);
-        Task<User> DeleteUserAsync(string login, bool isSoftDelete);
+        Task<User> DeleteUserAsync(string login, bool isSoftDelete, string revokedBy);
         Task<List<User>> GetAllUsersAsync();
         Task<User> GetUserByLoginAsync(string login);
         Task<User> GetUserByLoginAndPasswordAsync(string login, string password);
         Task<List<User>> GetUsersOlderThanAsync(int age);
+        Task<List<string>> GetAllLoginsAsync();
     }
 }
